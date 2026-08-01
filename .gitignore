@@ -1,0 +1,30 @@
+# Trajetórias e dados derivados ficam fora do repositório (e fora do OneDrive).
+# Ver src/config.py: MD_DATA_ROOT, padrão C:/md-data/3-dinamica-molecular
+data/
+*.dcd
+*.xtc
+*.h5
+*.chk
+*.npz
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+*.egg-info/
+.venv/
+
+# LaTeX
+relatorio/*.aux
+relatorio/*.log
+relatorio/*.out
+relatorio/*.bbl
+relatorio/*.blg
+relatorio/*.synctex.gz
+relatorio/*.toc
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store

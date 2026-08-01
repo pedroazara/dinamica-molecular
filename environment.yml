@@ -1,0 +1,38 @@
+# Ambiente do projeto. O Python do sistema (3.14) não serve: OpenMM, MDTraj e
+# MDAnalysis não publicam builds para 3.14, e o OpenMM é distribuído via
+# conda-forge, não via PyPI.
+#
+#   conda env create -f environment.yml
+#   conda activate md-ml
+#   python -m openmm.testInstallation      # precisa listar CUDA
+name: md-ml
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.11
+
+  # --- dinâmica molecular ---
+  - openmm>=8.1
+  - cuda-version=12          # remova esta linha em máquina sem GPU NVIDIA
+  - mdtraj
+  - mdanalysis
+
+  # --- aprendizado de máquina e análise ---
+  - scikit-learn
+  - deeptime                 # TICA / MSM (Fase 3, item ii)
+  - numpy
+  - scipy
+  - pandas
+
+  # --- visualização ---
+  - matplotlib
+  - seaborn
+  - nglview
+
+  # --- ferramentas ---
+  - jupyterlab
+  - ipywidgets
+  - pytest
+  - tqdm
