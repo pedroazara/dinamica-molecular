@@ -62,6 +62,10 @@ encontrado no algoritmo proposto pelo material de referência.
 
 ## 3. Contribuição: K-means coerente para features periódicas
 
+> O desenvolvimento tarefa a tarefa está em [ROTEIRO.md](ROTEIRO.md). Esta
+> seção registra a **hipótese** e o programa de medida; confirmá-la ou
+> derrubá-la é o trabalho da Fase B.
+
 ### 3.1 O problema
 
 O algoritmo de Lloyd converge porque os dois passos reduzem o **mesmo**
@@ -97,55 +101,51 @@ Só na variante `corda` a atualização é o minimizador exato da métrica de
 atribuição: μ = atan2(⟨sin θ⟩, ⟨cos θ⟩) minimiza Σ(1 − cos(θ − μ)). Equivale a
 K-means euclidiano sobre a imersão (cos θ, sin θ).
 
-### 3.3 Resultado medido
+### 3.3 Programa de medida
 
-Trajetória de 500 K, 12 diedros, 20 inicializações por configuração:
+O que precisa ser medido, sobre a trajetória de 500 K, para cada variante, com
+muitas inicializações e vários valores de k:
 
-| k | variante | convergiu | ciclo limite | objetivo subiu |
-|---|---|---|---|---|
-| 8 | `tutorial` | 7/20 | **13** | 17/20 |
-| 8 | `mista` | 20/20 | 0 | 7/20 |
-| 8 | `corda` | 20/20 | 0 | **0/20** |
+- **taxa de convergência** — frações de execuções que param por estabilização
+  dos rótulos
+- **ocorrência de ciclo limite** — execuções que nunca convergem, detectadas
+  guardando as partições já visitadas: partição repetida significa algoritmo
+  preso
+- **monotonicidade do objetivo** — num par (métrica, atualização) coerente, o
+  objetivo não pode subir entre iterações, por construção. Qualquer violação
+  indica incoerência ou bug
+- **fração dos dados perto da descontinuidade ±180°** — determina se o
+  problema é típico ou patológico neste sistema
 
-A receita do material de referência entra em **ciclo limite** — nunca converge,
-fica alternando entre partições — em 13 de 20 execuções, com k = 8, que é
-justamente o valor fixado no esqueleto do notebook. A variante coerente
-converge sempre e o objetivo nunca sobe, em nenhuma semente, para nenhum k
-testado (4 a 15).
-
-**Ressalva registrada:** a variante `corda` apresenta inércia de imagem mínima
-ligeiramente *maior*, porque otimiza um objetivo diferente. O ganho
-demonstrado é de convergência e reprodutibilidade, **não** de agrupamento mais
-compacto. Se os estados resultantes são fisicamente melhores é pergunta em
-aberto, a ser respondida na Fase C.
-
-Reproduzir com:
-
-```bash
-python -m molsim.experiment_coherence
-```
+**Cuidado na comparação:** variantes que otimizam objetivos diferentes não são
+comparáveis pela inércia de uma só delas. Uma variante que minimiza a distância
+de corda parece pior medida em imagem mínima, e vice-versa. A tabela final
+precisa deixar explícito qual objetivo está sendo reportado, e a conclusão
+precisa separar **convergência** (propriedade do algoritmo) de **qualidade dos
+estados** (propriedade física, que só a Fase C decide).
 
 ---
 
-## 4. Segunda questão: geometria não basta
+## 4. Segunda questão: geometria basta?
 
-A primeira execução do pipeline completo sobre a trajetória de 500 K produziu
-dois resultados que orientam o resto do projeto:
+A Questão 7 do exercício pede o número de estados metaestáveis da molécula. Há
+razão para desconfiar de que o critério puramente geométrico não determine esse
+número, e verificar isso é o objetivo da Fase C:
 
-**A silhueta não estabiliza.** Ela cresce de 0,238 (k=2) até ~0,44 em k=9 e
-depois oscila entre 0,43 e 0,48 até k=15, sem patamar. Selecionar k pelo máximo
-da silhueta devolve k=14, que é ajuste ao ruído da curva, não um número físico
-de estados.
+- **O cotovelo e a silhueta podem não ter patamar.** Se a curva de silhueta
+  subir sem estabilizar, escolher k pelo seu máximo é ajuste ao ruído, não
+  medida física. Verificar se existe joelho, e onde.
+- **"Metaestável" é propriedade cinética, não geométrica.** Um estado só é
+  metaestável se a molécula permanecer nele por tempo longo comparado ao tempo
+  de trânsito. Medir os tempos de residência **em unidades de frames**: se um
+  estado dura poucos frames, ele não é metaestável em sentido útil, por melhor
+  que seja o agrupamento geométrico.
+- **A temperatura importa.** A trajetória de 500 K foi gerada justamente para
+  deixar a molécula flexível. Os estados a 300 K devem estar mais separados —
+  comparar as duas é o teste direto dessa hipótese.
 
-**Os tempos de residência estão no limite da amostragem.** Com k=14 os estados
-duram de 15 a 96 ps, contra um intervalo de gravação de 10 ps — ou seja, de 1,5
-a 9,6 frames. Estados que sobrevivem poucos frames não são metaestáveis em
-sentido útil.
-
-Isso é esperado: a trajetória foi gerada a 500 K justamente para deixar a
-molécula flexível. A consequência metodológica é que **"quantos estados
-metaestáveis existem" não tem resposta bem definida por critério puramente
-geométrico**, e é o que motiva as Fases C e D.
+Se a conclusão for que o número de estados não é bem definido geometricamente,
+isso é **resultado**, não fracasso — e é o que justifica as Fases C e D.
 
 ---
 

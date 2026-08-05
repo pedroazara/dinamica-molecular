@@ -35,17 +35,15 @@ temperatura.
 
 ## Contribuição
 
-Implementação de K-means adequado a features **periódicas**. O algoritmo de
-Lloyd só converge se a regra de atualização for o minimizador da métrica usada
-na atribuição; combinar distância periódica com média aritmética quebra essa
-garantia e leva a ciclos limite. Ver §3 do [PLANO.md](PLANO.md) para o
-resultado medido.
+Implementação de K-means adequado a features **periódicas**, e investigação da
+garantia de convergência do algoritmo proposto na §7.8 do material de
+referência. O método de Lloyd converge porque os dois passos reduzem o mesmo
+objetivo — o que exige que a regra de atualização seja o minimizador da métrica
+usada na atribuição. Ângulos diedros são periódicos, e a §7.8 combina distância
+periódica com média aritmética.
 
-| variante | atribuição | atualização | coerente |
-|---|---|---|---|
-| `tutorial` | imagem mínima (L=360) | média aritmética | não |
-| `mista` | imagem mínima (L=360) | média circular | parcialmente |
-| `corda` | Σ(1 − cos Δθ) | média circular | **sim** |
+A pergunta, e o programa de medida para respondê-la, estão na Fase B do
+[ROTEIRO.md](ROTEIRO.md).
 
 ## Instalação
 
@@ -61,14 +59,17 @@ conda activate md-ml
 python -m openmm.testInstallation
 ```
 
-## Uso
+## Como desenvolver
+
+O caminho a percorrer está em **[ROTEIRO.md](ROTEIRO.md)** — tarefa por tarefa,
+com o critério de verificação e a armadilha típica de cada uma.
+
+Os módulos de `molsim/` são esqueletos: assinaturas e contratos, sem
+implementação. A suíte `tests/test_molsim.py` é a especificação executável —
+ela falha até o código existir, e passar nela é o alvo de cada tarefa.
 
 ```bash
-python -m molsim.analyze
-```
-
-```bash
-python -m molsim.experiment_coherence --k 6 8 --seeds 20
+pytest tests/test_molsim.py -k leitura -q
 ```
 
 ```bash
@@ -78,11 +79,11 @@ pytest -q
 ## Estrutura
 
 ```
+ROTEIRO.md                caminho de desenvolvimento, fase a fase
 molsim/                   análise do exercício MolSim (Fases A–C)
-  data.py                 leitura .xyz, diedros, raio de giro, RMSD
-  kmeans_variants.py      as três variantes + diagnóstico de coerência
-  analyze.py              pipeline completo ponta-a-ponta
-  experiment_coherence.py experimento de convergência
+  data.py                 leitura .xyz e índices dos diedros
+  features.py             raio de giro, RMSD, ângulos diedros
+  kmeans_variants.py      K-means periódico e diagnóstico de convergência
 src/                      simulação própria em OpenMM (Fase D)
   build_peptide.py        construção de peptídeos por coordenadas internas
   config.py               caminhos e parâmetros de simulação
