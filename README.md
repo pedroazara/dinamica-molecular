@@ -3,21 +3,57 @@
 Iniciação Científica PIBIC/CNPq — Departamento de Física, UFLA
 Discente: Pedro Henrique Ázara de Almeida · Orientador: Prof. Igor Saulo Santos de Oliveira
 
-Identificação automática de **estados metaestáveis** em trajetórias de dinâmica
-molecular, por agrupamento não supervisionado de descritores estruturais.
-O plano completo está em [PLANO.md](PLANO.md).
+Identificação de **estados metaestáveis** em trajetórias de dinâmica molecular
+por agrupamento não supervisionado de descritores estruturais.
 
-## Sistemas
+O projeto segue o roteiro do capítulo 7 do **Lab Course MolSim 2025**
+(*Machine Learning for Molecular Simulation*, Universidade de Amsterdã), ao qual
+o plano de trabalho registrado no SIGAA corresponde item a item. O planejamento
+completo está em [PLANO.md](PLANO.md).
 
-| | Sistema | Átomos | Solvente | Papel |
+## Sistema
+
+**Ace-(Ala)₆-NH₂** — hexâmero de alanina capeado, modelo de átomo unido, 42 sítios.
+
+| trajetória | T | frames | duração | gravação |
 |---|---|---|---|---|
-| **A** | ACE-ALA-NME (dipeptídeo de alanina) | 22 | TIP3P explícito | validação — bacias conhecidas na literatura, espaço (φ,ψ) bidimensional |
-| **B** | ACE-(ALA)₁₀-NME (deca-alanina) | 112 | GBn2 implícito | aplicação — transições hélice ↔ novelo, espaço alto-dimensional |
+| `trajectory.xyz` | 500 K | 2000 | 20 ns | 10 ps |
+| `trajectory_300K.xyz` | 300 K | 1000 | 10 ns | 10 ps |
+
+Fornecidas com o exercício, em `G:/Meu Drive/ufla/ic/exercises/`. Cada frame foi
+relaxado a T = 0 K por minimização de energia antes de ser gravado.
+
+A partir da Fase D o projeto gera trajetórias próprias do mesmo peptídeo em
+campo de força Amber all-atom, para obter estatística maior e mais de uma
+temperatura.
+
+## Descritores
+
+- **raio de giro** — compactação global, ponderado pela massa
+- **RMSD** ao primeiro frame, após superposição ótima (Kabsch)
+- **12 ângulos diedros** — φ e ψ dos 6 resíduos
+
+## Contribuição
+
+Implementação de K-means adequado a features **periódicas**. O algoritmo de
+Lloyd só converge se a regra de atualização for o minimizador da métrica usada
+na atribuição; combinar distância periódica com média aritmética quebra essa
+garantia e leva a ciclos limite. Ver §3 do [PLANO.md](PLANO.md) para o
+resultado medido.
+
+| variante | atribuição | atualização | coerente |
+|---|---|---|---|
+| `tutorial` | imagem mínima (L=360) | média aritmética | não |
+| `mista` | imagem mínima (L=360) | média circular | parcialmente |
+| `corda` | Σ(1 − cos Δθ) | média circular | **sim** |
 
 ## Instalação
 
-O Python do sistema não serve: OpenMM, MDTraj e MDAnalysis são distribuídos via
-conda-forge e não publicam builds para as versões mais recentes do interpretador.
+**As Fases A–C não exigem instalação.** numpy, scipy, scikit-learn, pandas e
+matplotlib bastam, e [molsim/data.py](molsim/data.py) lê os `.xyz` sem
+MDAnalysis.
+
+O ambiente conda só é necessário na Fase D, para as simulações em OpenMM:
 
 ```bash
 conda env create -f environment.yml
@@ -25,68 +61,56 @@ conda activate md-ml
 python -m openmm.testInstallation
 ```
 
-O último comando precisa listar `CUDA` entre as plataformas.
-
-### Onde ficam os dados
-
-As trajetórias **não** ficam no repositório nem na pasta sincronizada do
-OneDrive — um microssegundo de Ala10 ocupa alguns GB e a sincronização
-travaria a máquina durante a produção. O destino padrão é
-`C:/md-data/3-dinamica-molecular/`, configurável pela variável de ambiente
-`MD_DATA_ROOT` (ver [src/config.py](src/config.py)).
-
-## Reprodução
+## Uso
 
 ```bash
-# 1. estruturas iniciais (determinísticas, sem download)
-python -m src.build_peptide --n 1  --out structures/alanine_dipeptide.pdb
-python -m src.build_peptide --n 10 --phi -57 --psi -47 --out structures/ala10.pdb
-
-# 2. verificação da geometria
-pytest -q
-
-# 3. teste de fumaça ponta-a-ponta (poucos minutos)
-python -m src.simulate --system A --replica 0 --ns 1 --equil-ns 0.02
-
-# 4. produção
-powershell -File scripts/run_replicas.ps1 -System A
-powershell -File scripts/run_replicas.ps1 -System B
+python -m molsim.analyze
 ```
 
-Ou, de forma guiada, [notebooks/00_setup.ipynb](notebooks/00_setup.ipynb).
+```bash
+python -m molsim.experiment_coherence --k 6 8 --seeds 20
+```
+
+```bash
+pytest -q
+```
 
 ## Estrutura
 
 ```
-src/build_peptide.py    construção de ACE-(ALA)n-NME por coordenadas internas
-src/config.py           caminhos e parâmetros de simulação
-src/simulate.py         produção NVT em OpenMM
-tests/                  regressão geométrica (25 testes)
-notebooks/00_setup.ipynb  Fase 0 — validação ponta-a-ponta
-structures/             PDBs iniciais (versionados)
-figs/                   figuras geradas
+molsim/                   análise do exercício MolSim (Fases A–C)
+  data.py                 leitura .xyz, diedros, raio de giro, RMSD
+  kmeans_variants.py      as três variantes + diagnóstico de coerência
+  analyze.py              pipeline completo ponta-a-ponta
+  experiment_coherence.py experimento de convergência
+src/                      simulação própria em OpenMM (Fase D)
+  build_peptide.py        construção de peptídeos por coordenadas internas
+  config.py               caminhos e parâmetros de simulação
+  simulate.py             produção NVT
+notebooks/                00 (setup OpenMM), 01–04 (análise)
+tests/                    regressão geométrica e numérica
+structures/               PDBs iniciais (versionados)
+figs/molsim/              figuras geradas
 ```
 
-## Protocolo de simulação
+## Notas técnicas
 
-Ensemble NVT · termostato de Langevin (300 K, γ = 1 ps⁻¹) · passo de 2 fs com
-`constraints=HBonds` · campo de força `amber14-all` · minimização seguida de
-1 ns de equilibração descartada · gravação a cada 10 ps · 3 réplicas
-independentes por sistema, com sementes distintas.
+**Índices dos diedros.** A ordem dos átomos nos `.xyz` é regular
+(`0:CH3 1:C 2:O`, depois `N,H,CA,CB,C,O` por resíduo, e `39:N 40:H 41:H`), o que
+permite indexar os diedros diretamente. Isso dispensa o `to_guess` do
+MDAnalysis, cuja lista de diedros inferidos depende de raios de van der Waals e
+varia entre versões.
 
-Apenas os átomos do soluto entram na trajetória: no Sistema A a água é ~99,5%
-dos átomos e nenhum descritor do projeto a utiliza.
+**Dois erros no material original.** O PDF lista 11 diedros na dica da §7.4
+(falta o índice 31); o notebook usa os 12 corretos. E `trajectory_300K.xyz` usa
+nomes de tipo GROMOS (`CH3`, `CH1`, `NH1`) em vez de símbolos de elemento, o que
+impede a inferência de elementos e quebra a tarefa opcional de KNN sem
+renomeação prévia.
 
-## Nota sobre a construção das estruturas
-
-As coordenadas iniciais são geradas por NeRF a partir de comprimentos de
-ligação, ângulos e diedros padrão. A suíte de testes verifica quiralidade **L**
-em todos os resíduos e reproduz os parâmetros da α-hélice destra
-(3,6 resíduos/volta, avanço de 1,5 Å, raio de 2,3 Å, ponte O(i)···H(i+4) de
-2,0 Å) a partir de (φ,ψ) = (−57°, −47°).
-
-Esse teste não é decorativo: uma inversão de sinal entre a colocação de átomos
-e a medida de diedros produz estruturas **espelhadas** — hélices canhotas e
-mapas de Ramachandran refletidos — sem alterar nenhum comprimento de ligação
-nem ângulo de valência. O erro é invisível a qualquer verificação que não meça
-quiralidade explicitamente.
+**Construção de estruturas (Fase D).** As coordenadas iniciais são geradas por
+NeRF a partir de coordenadas internas padrão. A suíte de testes verifica
+quiralidade **L** e reproduz os parâmetros da α-hélice destra (3,6 resíduos por
+volta, avanço de 1,5 Å, raio de 2,3 Å) a partir de (φ,ψ) = (−57°, −47°). Esse
+teste não é decorativo: uma inversão de sinal entre a colocação de átomos e a
+medida de diedros gera estruturas **espelhadas** sem alterar nenhum comprimento
+de ligação nem ângulo de valência.
