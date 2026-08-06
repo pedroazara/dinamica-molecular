@@ -28,3 +28,5 @@ relatorio/*.toc
 Thumbs.db
 desktop.ini
 .DS_Store
+
+notebooks/exemplo_frames.xyz
