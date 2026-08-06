@@ -41,6 +41,18 @@ Fornecidos com o exercício, em `G:/Meu Drive/ufla/ic/exercises/`:
 Sistema: Ace-(Ala)₆-NH₂ em modelo de átomo unido, 42 sítios. Gravação a cada
 10 ps, cada frame relaxado a T = 0 K por minimização antes de ser escrito.
 
+A ordem dos átomos é a mesma nos dois arquivos e é regular:
+
+```
+índice  0: CH3     metila da acetila
+índice  1: C       carbonila da acetila
+índice  2: O
+resíduo i (i = 1..6), bloco começando em 3 + 6(i−1):
+        N, H, CA, CB, C, O
+índice 39: N       amida C-terminal
+índices 40, 41: H, H
+```
+
 Dois detalhes práticos já verificados: o PDF lista 11 diedros na dica da §7.4
 (falta o índice 31) enquanto o notebook usa os 12 corretos; e os nomes de tipo
 GROMOS do arquivo de 300 K impedem a inferência de elementos pelo `to_guess` do
@@ -62,8 +74,7 @@ encontrado no algoritmo proposto pelo material de referência.
 
 ## 3. Contribuição: K-means coerente para features periódicas
 
-> O desenvolvimento tarefa a tarefa está em [ROTEIRO.md](ROTEIRO.md). Esta
-> seção registra a **hipótese** e o programa de medida; confirmá-la ou
+> Esta seção registra a **hipótese** e o programa de medida; confirmá-la ou
 > derrubá-la é o trabalho da Fase B.
 
 ### 3.1 O problema
@@ -155,24 +166,28 @@ Toda semana termina com um artefato versionado no Git.
 
 ### Fase A — Reprodução e consolidação · Semana 1 (05–09/ago)
 
-- [x] leitura das trajetórias sem MDAnalysis, por índices explícitos
-- [x] descritores: raio de giro, RMSD com superposição de Kabsch, 12 diedros
-- [x] mapas de Ramachandran por resíduo, séries temporais, mapa Rg × RMSD
-- [ ] notebook `01_exercicio_molsim.ipynb` na forma do exercício, com as
-      lacunas preenchidas e as Questões 1–7 respondidas por escrito
-- [ ] mesma análise aplicada à trajetória de 300 K
-- [ ] baseline com `sklearn.cluster.KMeans` sobre (Rg, RMSD), como na §7.6
+Trabalhar dentro do notebook do exercício, com MDAnalysis e nglview.
 
-**Entregável:** notebook completo + `figs/molsim/`. É o que se leva à primeira
-reunião com o orientador.
+- [ ] carregar e visualizar a trajetória (§7.2)
+- [ ] raio de giro e RMSD, com os gráficos e o mapa Rg × RMSD (§7.3)
+- [ ] os 12 diedros no dataframe (§7.4)
+- [ ] análise exploratória, histogramas, Ramachandran por resíduo (§7.5)
+- [ ] K-means do scikit-learn sobre (Rg, RMSD) e gráfico de cotovelo (§7.6, §7.7)
+- [ ] mesma análise aplicada à trajetória de 300 K
+- [ ] Questões 1 a 5 respondidas por escrito
+
+**Entregável:** `notebooks/01_exercicio_molsim.ipynb` + figuras. É o que se
+leva à primeira reunião com o orientador.
 
 ### Fase B — K-means coerente · Semanas 2–3 (10–23/ago)
 
-- [x] implementação das três variantes com detecção de ciclo limite
-- [x] medida de convergência, ciclos e monotonicidade
-- [ ] testes unitários: média circular, imagem mínima, minimizador de cada métrica
-- [ ] baselines de comparação: GMM, DBSCAN, aglomerativo (Ward)
-- [ ] concordância entre variantes por ARI; estabilidade sob re-inicialização
+- [ ] portar leitura e descritores para módulos em `molsim/`, com testes
+- [ ] distância periódica (§7.8) — o caso de teste do tutorial dá 28.284
+- [ ] K-means escrito na mão, com os quatro passos da §7.8
+- [ ] instrumentação: histórico do objetivo, contagem de iterações, detecção
+      de ciclo limite guardando as partições já visitadas
+- [ ] as variantes que a análise da §3 sugerir, e a medida comparativa
+- [ ] baselines: GMM, DBSCAN, aglomerativo (Ward); concordância por ARI
 - [ ] seleção de k por joelho, não por máximo de silhueta
 
 **Entregável:** `molsim/kmeans_variants.py` testado + notebook `02_kmeans.ipynb`
@@ -252,16 +267,12 @@ implementação independente).
 
 ```
 molsim/                 análise do exercício MolSim (Fases A–C)
-  data.py               leitura .xyz, diedros, raio de giro, RMSD
-  kmeans_variants.py    as três variantes + diagnóstico de coerência
-  analyze.py            pipeline completo ponta-a-ponta
-  experiment_coherence.py   experimento de convergência
 src/                    simulação própria em OpenMM (Fase D)
   build_peptide.py      construção de peptídeos por coordenadas internas
   config.py, simulate.py
-notebooks/              00 (setup OpenMM), 01–04 (análise)
-tests/                  regressão geométrica e numérica
-figs/molsim/            figuras geradas
+notebooks/              notebooks de análise
+tests/                  testes
+figs/                   figuras geradas
 ```
 
 ### 6.3 Onde ficam os dados

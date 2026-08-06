@@ -42,8 +42,8 @@ objetivo — o que exige que a regra de atualização seja o minimizador da mét
 usada na atribuição. Ângulos diedros são periódicos, e a §7.8 combina distância
 periódica com média aritmética.
 
-A pergunta, e o programa de medida para respondê-la, estão na Fase B do
-[ROTEIRO.md](ROTEIRO.md).
+A pergunta, e o programa de medida para respondê-la, estão na §3 do
+[PLANO.md](PLANO.md).
 
 ## Instalação
 
@@ -59,39 +59,19 @@ conda activate md-ml
 python -m openmm.testInstallation
 ```
 
-## Como desenvolver
-
-O caminho a percorrer está em **[ROTEIRO.md](ROTEIRO.md)** — tarefa por tarefa,
-com o critério de verificação e a armadilha típica de cada uma.
-
-Os módulos de `molsim/` são esqueletos: assinaturas e contratos, sem
-implementação. A suíte `tests/test_molsim.py` é a especificação executável —
-ela falha até o código existir, e passar nela é o alvo de cada tarefa.
-
-```bash
-pytest tests/test_molsim.py -k leitura -q
-```
-
-```bash
-pytest -q
-```
-
 ## Estrutura
 
 ```
-ROTEIRO.md                caminho de desenvolvimento, fase a fase
+PLANO.md                  planejamento e cronograma
 molsim/                   análise do exercício MolSim (Fases A–C)
-  data.py                 leitura .xyz e índices dos diedros
-  features.py             raio de giro, RMSD, ângulos diedros
-  kmeans_variants.py      K-means periódico e diagnóstico de convergência
 src/                      simulação própria em OpenMM (Fase D)
   build_peptide.py        construção de peptídeos por coordenadas internas
   config.py               caminhos e parâmetros de simulação
   simulate.py             produção NVT
-notebooks/                00 (setup OpenMM), 01–04 (análise)
-tests/                    regressão geométrica e numérica
+notebooks/                notebooks de análise
+tests/                    testes
 structures/               PDBs iniciais (versionados)
-figs/molsim/              figuras geradas
+figs/                     figuras geradas
 ```
 
 ## Notas técnicas
