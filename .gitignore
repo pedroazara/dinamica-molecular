@@ -30,3 +30,6 @@ desktop.ini
 .DS_Store
 
 notebooks/exemplo_frames.xyz
+
+# GIFs sao regeneraveis com molsim/viz.py
+figs/*.gif
