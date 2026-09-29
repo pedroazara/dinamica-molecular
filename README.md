@@ -59,6 +59,19 @@ conda activate md-ml
 python -m openmm.testInstallation
 ```
 
+## Figuras do relatório
+
+```bash
+python -m molsim.figuras                 # todas (~1 min)
+python -m molsim.figuras --only C_its    # só algumas
+```
+
+Saem em `figs/relatorio/`, em PDF (LaTeX) e PNG 300 dpi (Word), já no tamanho
+de impressão, com o catálogo [`LEGENDAS.md`](figs/relatorio/LEGENDAS.md): seção
+do relatório, questão do exercício e legenda sugerida de cada figura, com os
+números calculados na mesma execução. As coordenadas dos medoides dos estados
+ficam em `figs/relatorio/estruturas/`.
+
 ## Estrutura
 
 ```

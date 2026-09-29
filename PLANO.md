@@ -253,10 +253,12 @@ no nível dos descritores e dos estados, não do campo de força.
 
 - [x] energias livres relativas ΔG = −k_B T ln(n_i/N), populações, residências
       (500 K, com IC95 por bootstrap em blocos; notebook 05 §1)
-- [ ] estruturas medoides renderizadas (VMD / VESTA / nglview)
+- [x] estruturas medoides renderizadas (`E_medoides`; coordenadas em
+      `figs/relatorio/estruturas/` para VMD / VESTA)
 - [x] nomeação estrutural dos estados: uma letra por resíduo (α, β, P = PPII,
       L = α_L), `molsim.data.state_name`
-- [ ] figuras finais em 300 dpi (as do notebook 05 já saem em 300 dpi)
+- [x] figuras finais em 300 dpi: `python -m molsim.figuras` gera as 20 figuras
+      do relatório em `figs/relatorio/`, com o catálogo `LEGENDAS.md`
 
 ### Fase F — Escrita · Semanas 8–9 (21/set–30/set)
 
