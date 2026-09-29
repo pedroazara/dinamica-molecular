@@ -53,10 +53,19 @@ resíduo i (i = 1..6), bloco começando em 3 + 6(i−1):
 índices 40, 41: H, H
 ```
 
-Dois detalhes práticos já verificados: o PDF lista 11 diedros na dica da §7.4
-(falta o índice 31) enquanto o notebook usa os 12 corretos; e os nomes de tipo
-GROMOS do arquivo de 300 K impedem a inferência de elementos pelo `to_guess` do
-MDAnalysis, o que quebra a tarefa opcional de KNN sem renomeação prévia.
+Três detalhes práticos já verificados:
+
+- o PDF lista 11 diedros na dica da §7.4 (falta o índice 31), enquanto o
+  notebook usa os 12 corretos;
+- com os nomes de tipo GROMOS do arquivo de 300 K, o MDAnalysis atribui
+  **massa zero** a `CH3`, `CH1` e `NH1`, e o raio de giro sai errado sem
+  aviso. [molsim/data.py](molsim/data.py) lê os dois arquivos em numpy, com
+  diedros por quádruplas de átomos explícitas e massas pelo elemento;
+- **a ligação peptídica Ala3–Ala4 é *cis* em 100% dos frames**, nas duas
+  trajetórias (|ω| ≈ 3°, Cα–Cα = 2,96 Å contra 3,80 Å nas outras). Por isso
+  Ala3 nunca sai da região estendida e Ala4 nunca chega a α_L, nem a 500 K. Os
+  estados do projeto são os de um hexâmero com uma ligação *cis* no meio
+  (notebook 05, §0).
 
 ---
 
@@ -195,19 +204,32 @@ com a tabela comparativa. É o entregável técnico principal.
 
 ### Fase C — Critério cinético de estado · Semanas 3–4 (17–30/ago)
 
-- [ ] tempos de residência e matriz de transição em função do tempo de atraso
-- [ ] teste de consistência: os estados sobrevivem ao aumento do lag?
-- [ ] comparação 500 K × 300 K — os estados a 300 K devem ser mais separados
-- [ ] KNN treinado nos rótulos de 500 K aplicado à trajetória de 300 K
-      (tarefa opcional 11 do MolSim; exige renomear os átomos do arquivo)
-- [ ] resposta fundamentada à Questão 7: quantos estados, e sob qual critério
+- [x] tempos de residência e matriz de transição em função do tempo de atraso
+- [x] teste de consistência: os estados sobrevivem ao aumento do lag?
+      → **não**: as escalas implícitas de K=4 não têm patamar. Com 20–40
+      microestados há um processo lento resolvido (~0,3 ns), que é a entrada
+      e saída de resíduos em α_L
+- [x] comparação 500 K × 300 K → a 300 K não há α_L, e 10 ns não equilibram
+      os estados próprios dessa temperatura (Ala1 entra e sai de α_R uma
+      única vez); sem ΔG de equilíbrio a 300 K
+- [x] KNN treinado nos rótulos de 500 K aplicado à trajetória de 300 K
+      (tarefa opcional 11 do MolSim) → 96,5% dos frames caem num único estado
+      de 500 K; não exigiu renomear átomos
+- [x] resposta fundamentada à Questão 7: quantos estados, e sob qual critério
+- [x] partição de referência reprodutível (`canonical_states`): uma rodada
+      única de K=4 cai num de dezenas de mínimos locais
 
-**Entregável:** notebook `03_cinetica.ipynb`.
+**Entregável:** notebook `05_cinetica.ipynb` + `molsim/kinetics.py` testado.
 
 > **31/08 — encerramento formal da vigência da bolsa.** Confirmar com a PRP o
 > que precisa estar protocolado até esta data.
 
 ### Fase D — Dados próprios · Semanas 5–6 (31/ago–13/set)
+
+> **29/09/2026 — movida para trabalho futuro.** O ambiente OpenMM não chegou a
+> ser montado, e as réplicas levariam dias. O relatório final se fecha com as
+> trajetórias fornecidas. Uma simulação própria todo-*trans* também não seria
+> diretamente comparável às fornecidas, por causa da ligação *cis* (§1.1).
 
 A trajetória fornecida tem 2000 frames a uma única temperatura. Gerar dados
 próprios é o que permite dizer algo que o exercício não pode.
@@ -229,10 +251,12 @@ no nível dos descritores e dos estados, não do campo de força.
 
 ### Fase E — Análise física e figuras · Semana 7 (14–20/set)
 
-- [ ] energias livres relativas ΔG = −k_B T ln(n_i/N), populações, residências
+- [x] energias livres relativas ΔG = −k_B T ln(n_i/N), populações, residências
+      (500 K, com IC95 por bootstrap em blocos; notebook 05 §1)
 - [ ] estruturas medoides renderizadas (VMD / VESTA / nglview)
-- [ ] nomeação estrutural dos estados (α_R, β/PPII, α_L, voltas)
-- [ ] figuras finais em 300 dpi
+- [x] nomeação estrutural dos estados: uma letra por resíduo (α, β, P = PPII,
+      L = α_L), `molsim.data.state_name`
+- [ ] figuras finais em 300 dpi (as do notebook 05 já saem em 300 dpi)
 
 ### Fase F — Escrita · Semanas 8–9 (21/set–30/set)
 
@@ -313,8 +337,10 @@ status de 5 linhas toda sexta.
 | OpenMM/CUDA não instala no Windows | Média | Fase D é a única que depende dele; fallback para plataforma `CPU` ou WSL2 |
 | Escopo inflar | Alta | congelar em 13/09; ideias novas vão para o backlog |
 
-**Backlog explícito (trabalho futuro no relatório):** TICA e Markov State
-Models completos com PCCA+, VAMPnets, metadinâmica, peptídeos maiores.
+**Backlog explícito (trabalho futuro no relatório):** a Fase D (trajetórias
+próprias em Amber all-atom, com estatística maior e sem a ligação *cis*), TICA
+e Markov State Models completos com PCCA+, VAMPnets, metadinâmica, peptídeos
+maiores.
 
 ---
 
@@ -327,7 +353,8 @@ Em 30/09/2026:
 3. demonstração quantitativa do defeito de convergência e da correção
 4. comparação contra ≥3 métodos de baseline
 5. análise cinética dos estados (residência, transições, dependência do lag)
-6. trajetórias próprias do mesmo sistema, com estatística maior
+6. ~~trajetórias próprias do mesmo sistema, com estatística maior~~ →
+   trabalho futuro (decisão de 29/09/2026, ver Fase D)
 7. interpretação física dos estados, com estruturas representativas
 8. relatório final submetido e resumo de congresso
 

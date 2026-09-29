@@ -82,11 +82,20 @@ permite indexar os diedros diretamente. Isso dispensa o `to_guess` do
 MDAnalysis, cuja lista de diedros inferidos depende de raios de van der Waals e
 varia entre versões.
 
-**Dois erros no material original.** O PDF lista 11 diedros na dica da §7.4
-(falta o índice 31); o notebook usa os 12 corretos. E `trajectory_300K.xyz` usa
-nomes de tipo GROMOS (`CH3`, `CH1`, `NH1`) em vez de símbolos de elemento, o que
-impede a inferência de elementos e quebra a tarefa opcional de KNN sem
-renomeação prévia.
+**Três armadilhas no material original.** O PDF lista 11 diedros na dica da
+§7.4 (falta o índice 31); o notebook usa os 12 corretos. `trajectory_300K.xyz`
+usa nomes de tipo GROMOS (`CH3`, `CH1`, `NH1`) em vez de símbolos de elemento, e
+o MDAnalysis atribui **massa zero** a esses átomos: o raio de giro sai errado
+sem aviso. [molsim/data.py](molsim/data.py) lê os dois arquivos em numpy, com
+diedros por quádruplas de átomos e massas pelo elemento, e é conferido contra o
+MDAnalysis nos testes. Por fim, **a ligação peptídica Ala3–Ala4 é *cis*** em
+todos os frames das duas trajetórias, o que restringe os resíduos 3 e 4
+(notebook 05, §0).
+
+**Critério cinético.** [molsim/kinetics.py](molsim/kinetics.py) mede tempos de
+residência, escalas de tempo implícitas com IC por bootstrap em blocos, e a
+divisão espectral em dois macroestados. Os testes usam cadeias de Markov com
+escala de tempo analítica.
 
 **Construção de estruturas (Fase D).** As coordenadas iniciais são geradas por
 NeRF a partir de coordenadas internas padrão. A suíte de testes verifica

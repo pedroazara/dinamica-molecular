@@ -23,7 +23,7 @@ euclidiano sobre a imersão (cos θ, sin θ).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 
@@ -191,6 +191,55 @@ def convergence_program(features, k: int, variant: str, n_init: int = 50,
         mean_n_iter=sum(r.n_iter for r in results) / n,
         results=results,
     )
+
+
+# --------------------------------------------------------------------------
+# Estados canônicos: a partição que as análises das Fases C e E usam
+# --------------------------------------------------------------------------
+def sort_by_population(result: KMeansResult) -> KMeansResult:
+    """Renumera os clusters em ordem decrescente de população (0 = mais
+    populado). Sem isso, o número de um estado depende da semente."""
+    order = np.argsort(-result.n_members, kind="stable")
+    new_id = np.empty_like(order)
+    new_id[order] = np.arange(len(order))
+    return replace(result, labels=new_id[result.labels], centers=result.centers[order],
+                   n_members=result.n_members[order])
+
+
+def best_of(features, k: int, variant: str = "corda", n_init: int = 50,
+            lbox: float = 360.0, max_iter: int = 200, seed0: int = 0) -> KMeansResult:
+    """Menor objetivo final entre `n_init` inicializações que convergiram,
+    com os estados renumerados por população. Determinístico dado `seed0`."""
+    runs = [kmeans_periodic(features, k, variant, lbox, max_iter, seed=seed0 + i)
+            for i in range(n_init)]
+    runs = [r for r in runs if r.converged] or runs
+    best = min(runs, key=lambda r: r.objective_history[-1])
+    return sort_by_population(best)
+
+
+def canonical_states(features, k: int = 4) -> KMeansResult:
+    """A partição de referência do projeto: `corda`, melhor de 50
+    inicializações a partir da semente 0. Todo notebook que fala de "os
+    estados" (ΔG, transições, figuras) chama esta função, e não uma rodada
+    avulsa — com 50 sementes a trajetória de 500 K tem dezenas de mínimos
+    locais distintos para K=4, e uma rodada só não é reprodutível."""
+    return best_of(features, k, variant="corda", n_init=50, seed0=0)
+
+
+def match_states(ref_centers, centers, lbox: float = 360.0) -> np.ndarray:
+    """Permutação `perm` tal que `centers[perm[i]]` é o estado que corresponde
+    a `ref_centers[i]`, pelo algoritmo húngaro sobre a distância de corda.
+
+    Para comparar partições de sementes ou temperaturas diferentes: o número de
+    um cluster é arbitrário, o centroide não.
+    """
+    from scipy.optimize import linear_sum_assignment
+
+    ref_centers = np.asarray(ref_centers, dtype=float)
+    centers = np.asarray(centers, dtype=float)
+    cost = np.stack([chord_sq(centers, c, lbox) for c in ref_centers])
+    _, perm = linear_sum_assignment(cost)
+    return perm
 
 
 def discontinuity_fraction(angles, threshold_deg: float = 40.0) -> float:
