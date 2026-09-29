@@ -181,14 +181,14 @@ leva à primeira reunião com o orientador.
 
 ### Fase B — K-means coerente · Semanas 2–3 (10–23/ago)
 
-- [ ] portar leitura e descritores para módulos em `molsim/`, com testes
-- [ ] distância periódica (§7.8) — o caso de teste do tutorial dá 28.284
-- [ ] K-means escrito na mão, com os quatro passos da §7.8
-- [ ] instrumentação: histórico do objetivo, contagem de iterações, detecção
+- [x] portar leitura e descritores para módulos em `molsim/`, com testes
+- [x] distância periódica (§7.8) — o caso de teste do tutorial dá 28.284
+- [x] K-means escrito na mão, com os quatro passos da §7.8
+- [x] instrumentação: histórico do objetivo, contagem de iterações, detecção
       de ciclo limite guardando as partições já visitadas
-- [ ] as variantes que a análise da §3 sugerir, e a medida comparativa
-- [ ] baselines: GMM, DBSCAN, aglomerativo (Ward); concordância por ARI
-- [ ] seleção de k por joelho, não por máximo de silhueta
+- [x] as variantes que a análise da §3 sugerir, e a medida comparativa
+- [x] baselines: GMM, DBSCAN, aglomerativo (Ward); concordância por ARI
+- [x] seleção de k por joelho, não por máximo de silhueta
 
 **Entregável:** `molsim/kmeans_variants.py` testado + notebook `02_kmeans.ipynb`
 com a tabela comparativa. É o entregável técnico principal.

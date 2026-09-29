@@ -33,3 +33,6 @@ notebooks/exemplo_frames.xyz
 
 # GIFs sao regeneraveis com molsim/viz.py
 figs/*.gif
+
+# Frames por cluster, regeneraveis a partir dos rotulos canonicos
+notebooks/cluster_*.xyz

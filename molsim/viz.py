@@ -119,6 +119,8 @@ def main() -> None:
     ap.add_argument("--frames", type=int, default=200, help="quantos frames animar")
     ap.add_argument("--step", type=int, default=1, help="pular de N em N frames")
     ap.add_argument("--fps", type=int, default=15)
+    ap.add_argument("--spin", type=float, default=0.25,
+                    help="giro da câmera em graus por frame")
     ap.add_argument("--out", type=Path, default=raiz / "figs" / "trajetoria.gif")
     args = ap.parse_args()
 
@@ -126,7 +128,7 @@ def main() -> None:
     print(f"{len(coords)} frames alinhados, {coords.shape[1]} átomos, "
           f"{len(bonds)} ligações  ({times[0]:.0f}–{times[-1]:.0f} ps)")
 
-    out = animate(coords, names, bonds, args.out, fps=args.fps,
+    out = animate(coords, names, bonds, args.out, fps=args.fps, spin=args.spin,
                   title=f"{args.traj.stem} — alinhada")
     print(f"-> {out}  ({out.stat().st_size / 1e6:.1f} MB)")
 
