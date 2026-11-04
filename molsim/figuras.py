@@ -569,6 +569,60 @@ def desenhar_trecho(ax, fonte=9, fonte_giro=13, atomo=260) -> None:
     ax.axis("off")
 
 
+@figura("S_diedro_livro_poster", "O ângulo φ como a abertura de um livro",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_diedro_livro(d: Dados) -> str:
+    from matplotlib.patches import Arc, Polygon
+
+    halo = [pe.withStroke(linewidth=3, foreground="white")]
+    fig, ax = plt.subplots(figsize=(9 * CM, 7.5 * CM))
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    n_, ca = np.array([0.0, 0.0]), np.array([0.0, 1.6])
+    # duas páginas presas na lombada N–Cα; a da direita está inclinada para trás
+    esq = [n_, ca, ca + (-1.7, 0.45), n_ + (-1.7, 0.45)]
+    dir_ = [n_, ca, ca + (1.15, 0.75), n_ + (1.15, 0.75)]
+    ax.add_patch(Polygon(dir_, closed=True, facecolor="#f3e6d8", edgecolor="#c9a882", lw=1,
+                         zorder=1))
+    ax.add_patch(Polygon(esq, closed=True, facecolor="#e6eef9", edgecolor="#9fb3d1", lw=1,
+                         zorder=2))
+    c_ant = n_ + (-1.25, 0.3)
+    c_seg = ca + (0.85, 0.55)
+    bond = dict(color="#5a5955", lw=3.5, solid_capstyle="round")
+    ax.plot(*np.c_[n_, ca], zorder=5, **bond)
+    ax.plot(*np.c_[n_, c_ant], zorder=5, **bond)
+    ax.plot(*np.c_[ca, c_seg], zorder=3, **bond)
+    for (x, y), cor, r, off in ((n_, CPK["N"], "N", (10, -6)), (ca, CPK["C"], "Cα", (11, 4)),
+                                (c_ant, CPK["C"], "C de antes", (0, -14)),
+                                (c_seg, CPK["C"], "C de depois", (0, 13))):
+        ax.scatter(x, y, s=230, color=cor, edgecolors=TINTA, linewidths=0.6, zorder=6)
+        ax.annotate(r, (x, y), xytext=off, textcoords="offset points", ha="center" if off[0] == 0
+                    else "left", va="center", fontsize=8.5, color=TINTA, path_effects=halo,
+                    zorder=7)
+    # arco da abertura, no meio da lombada (círculo visto em perspectiva: elipse)
+    meio = (n_ + ca) / 2
+    a_esq = np.degrees(np.arctan2(0.45 * 0.55, -1.7))
+    a_dir = np.degrees(np.arctan2(0.75 * 0.55, 1.15))
+    # as páginas abrem para trás: o arco passa atrás da lombada (zorder menor que o dela)
+    ax.add_patch(Arc(meio, 1.5, 1.5 * 0.55, theta1=a_dir, theta2=a_esq,
+                     color=COR_GIRO["φ"], lw=2.6, zorder=4))
+    for th in (a_esq, a_dir):  # os dois braços do ângulo, um em cada página
+        fim = meio + 0.75 * np.array([np.cos(np.radians(th)), 0.55 * np.sin(np.radians(th))])
+        ax.plot(*np.c_[meio, fim], color=COR_GIRO["φ"], lw=1.6, ls=(0, (3, 2)), zorder=4)
+    ax.text(-0.3, meio[1] + 0.62, "φ", fontsize=16, fontweight="bold",
+            color=COR_GIRO["φ"], ha="center", va="center", path_effects=halo, zorder=9)
+    ax.annotate("lombada:\na ligação que gira", (0, 0.35), xytext=(0.55, -0.55),
+                fontsize=7.5, color="#77756f", ha="left", va="center",
+                arrowprops=dict(arrowstyle="-", color="#77756f", lw=0.7))
+    ax.set_xlim(-2.1, 2.2)
+    ax.set_ylim(-0.95, 2.7)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    salvar(fig, "S_diedro_livro_poster")
+    return ("O ângulo φ visto como a abertura de um livro: a lombada é a ligação N–Cα, uma "
+            "página contém o C anterior ao N e a outra o C seguinte ao Cα. Quando a ligação "
+            "gira, o livro abre ou fecha e φ muda. ψ é igual, com a lombada em Cα–C.")
+
+
 @figura("S_diedro_explicado_poster", "O que são os ângulos φ e ψ",
         "Pôster › Material e Métodos", tipo="pôster")
 def fig_diedro_explicado(d: Dados) -> str:
