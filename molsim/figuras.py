@@ -33,6 +33,7 @@ from typing import Callable
 import matplotlib
 
 matplotlib.use("Agg")
+import matplotlib.patheffects as pe  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
@@ -360,7 +361,8 @@ def eixos_de_vista(coords: np.ndarray) -> np.ndarray:
     return base
 
 
-def desenhar_molecula(ax, coords, names, bonds, base, rotulos=True, destaque=None) -> None:
+def desenhar_molecula(ax, coords, names, bonds, base, rotulos=True, destaque=None,
+                      fonte=6.5) -> None:
     xyz = (coords - coords[BACKBONE].mean(0)) @ base
     x, y, z = xyz.T
     itens = [(z[a] + z[b]) / 2 - 0.01 for a, b in bonds]
@@ -383,11 +385,11 @@ def desenhar_molecula(ax, coords, names, bonds, base, rotulos=True, destaque=Non
         for r in range(6):
             ca = 3 + 6 * r + 2
             ax.annotate(RESIDUOS[r], (x[ca], y[ca]), xytext=(0, 9), textcoords="offset points",
-                        ha="center", fontsize=6.5, color=TINTA, zorder=500)
+                        ha="center", fontsize=fonte, color=TINTA, zorder=500)
         ax.annotate("Ace", (x[0], y[0]), xytext=(-8, 0), textcoords="offset points",
-                    ha="right", va="center", fontsize=6.5, color=TINTA, zorder=500)
+                    ha="right", va="center", fontsize=fonte, color=TINTA, zorder=500)
         ax.annotate("NH₂", (x[39], y[39]), xytext=(8, 0), textcoords="offset points",
-                    ha="left", va="center", fontsize=6.5, color=TINTA, zorder=500)
+                    ha="left", va="center", fontsize=fonte, color=TINTA, zorder=500)
     ax.set_aspect("equal")
     ax.axis("off")
 
@@ -438,6 +440,26 @@ def fig_estrutura(d: Dados) -> str:
             "fornecidas; as demais são *trans* (a da acetila passa por um único episódio *cis* "
             "curto a 500 K). A ligação *cis* dobra a cadeia no meio. Renderização por projeção "
             "nos eixos principais do esqueleto.")
+
+
+@figura("S_estrutura_poster", "Estrutura do Ace-(Ala)₆-NH₂, sem destaque",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_estrutura_poster(d: Dados) -> str:
+    names, coords = d.xyz500
+    c0 = coords[0]
+    fig, ax = plt.subplots(figsize=(INTEIRA, 6.2 * CM))
+    desenhar_molecula(ax, c0, names, ligacoes(c0, names), eixos_de_vista(c0), fonte=8.5)
+    # halo branco: com a fonte maior, os rótulos passam por cima de átomos vizinhos
+    for t in ax.texts:
+        t.set_path_effects([pe.withStroke(linewidth=3, foreground="white")])
+    alcas = [Line2D([], [], marker="o", ls="", markersize=6, markerfacecolor=CPK[e],
+                    markeredgecolor=TINTA, markeredgewidth=0.4, label=e) for e in "CNOH"]
+    ax.legend(handles=alcas, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=4,
+              handletextpad=0.1, columnspacing=1.2, fontsize=8.5)
+    salvar(fig, "S_estrutura_poster")
+    return ("Ace-(Ala)₆-NH₂, peptídeo de seis alaninas, no primeiro frame da trajetória de "
+            "500 K. Mesma figura que S_estrutura, sem o destaque da ligação *cis*, para "
+            "público leigo.")
 
 
 # --------------------------------------------------------------------------
