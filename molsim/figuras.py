@@ -623,6 +623,76 @@ def fig_diedro_livro(d: Dados) -> str:
             "gira, o livro abre ou fecha e φ muda. ψ é igual, com a lombada em Cα–C.")
 
 
+@figura("S_diedro_simples_poster", "O ângulo φ visto de ponta, como um ângulo comum",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_diedro_simples(d: Dados) -> str:
+    from matplotlib.patches import Arc, FancyArrowPatch
+
+    halo = [pe.withStroke(linewidth=3, foreground="white")]
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(INTEIRA, 6.2 * CM),
+                                 gridspec_kw={"width_ratios": [1.25, 1]})
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.9, bottom=0.02, wspace=0.15)
+
+    # (a) de onde olhar: ao longo da ligação N–Cα
+    # de lado, só se vê a componente vertical: com φ = 120°, o C de depois desce
+    # cos(120°) = metade do que o C de antes sobe (o resto aponta para fora do papel)
+    pts = {"C de antes": (-1.0, 0.9), "N": (0.0, 0.0), "Cα": (1.6, 0.0),
+           "C de depois": (2.6, -0.45)}
+    cores = {"C de antes": CPK["C"], "N": CPK["N"], "Cα": CPK["C"], "C de depois": CPK["C"]}
+    ordem = list(pts)
+    for i in range(3):
+        a1.plot(*np.c_[pts[ordem[i]], pts[ordem[i + 1]]], color="#5a5955", lw=3.5,
+                solid_capstyle="round", zorder=2)
+    offs = {"C de antes": (0, 15), "N": (0, -16), "Cα": (0, 16), "C de depois": (0, -15)}
+    for k, (x, y) in pts.items():
+        a1.scatter(x, y, s=220, color=cores[k], edgecolors=TINTA, linewidths=0.6, zorder=5)
+        a1.annotate(k, (x, y), xytext=offs[k], textcoords="offset points", ha="center",
+                    va="center", fontsize=8.5, color=TINTA, path_effects=halo)
+    a1.add_patch(FancyArrowPatch((-1.55, 0.0), (-0.3, 0.0), arrowstyle="-|>",
+                                 mutation_scale=16, color=COR_GIRO["φ"], lw=1.8,
+                                 ls=(0, (4, 2)), zorder=3))
+    a1.text(-1.6, -0.35, "olhe ao longo\nda ligação N–Cα", ha="left", va="top",
+            fontsize=8, color=COR_GIRO["φ"])
+    a1.set_xlim(-1.8, 3.0)
+    a1.set_ylim(-1.35, 1.35)
+    a1.set_aspect("equal")
+    a1.axis("off")
+
+    # (b) o que se vê: N na frente cobrindo o Cα, e os dois C como as retas de um ângulo
+    O = np.array([0.0, 0.0])
+    t_antes, t_depois = 90.0, -30.0
+    for t, rot in ((t_antes, "C de antes"), (t_depois, "C de depois")):
+        v = np.array([np.cos(np.radians(t)), np.sin(np.radians(t))])
+        a2.plot(*np.c_[O, 1.15 * v], color=TINTA, lw=2.2, solid_capstyle="round", zorder=2)
+        a2.scatter(*(1.15 * v), s=200, color=CPK["C"], edgecolors=TINTA, linewidths=0.6,
+                   zorder=5)
+        a2.annotate(rot, 1.15 * v, xytext=(12, 0), textcoords="offset points", ha="left",
+                    va="center", fontsize=8.5, color=TINTA, path_effects=halo)
+    a2.scatter(*O, s=200, color=CPK["N"], edgecolors=TINTA, linewidths=0.6, zorder=6)
+    a2.annotate("N\n(o Cα fica\nescondido atrás)", O, xytext=(-14, 0),
+                textcoords="offset points", ha="right", va="center", fontsize=7.5,
+                color=TINTA, path_effects=halo)
+    a2.add_patch(Arc(O, 0.9, 0.9, theta1=t_depois, theta2=t_antes, color=COR_GIRO["φ"],
+                     lw=2.4, zorder=3))
+    meio = np.radians((t_antes + t_depois) / 2)
+    a2.text(0.62 * np.cos(meio), 0.62 * np.sin(meio), "φ", fontsize=15, fontweight="bold",
+            color=COR_GIRO["φ"], ha="center", va="center", path_effects=halo, zorder=7)
+    a2.set_xlim(-1.5, 1.9)
+    a2.set_ylim(-1.0, 1.45)
+    a2.set_aspect("equal")
+    a2.axis("off")
+
+    for ax, s, titulo in ((a1, "a", "a cadeia, de lado"), (a2, "b", "o que você vê")):
+        x0 = ax.get_position().x0
+        fig.text(x0, 0.99, f"({s}) {titulo}", ha="left", va="top", fontsize=8.5,
+                 fontweight="bold", color=TINTA)
+    salvar(fig, "S_diedro_simples_poster")
+    return ("(a) Trecho da cadeia: C de antes, N, Cα, C de depois. (b) Olhando ao longo da "
+            "ligação N–Cα, o Cα fica escondido atrás do N e os dois C aparecem como as duas "
+            "retas de um ângulo comum: esse ângulo é φ. ψ é igual, olhando ao longo de Cα–C. "
+            "Valor ilustrativo: φ = 120°.")
+
+
 @figura("S_diedro_explicado_poster", "O que são os ângulos φ e ψ",
         "Pôster › Material e Métodos", tipo="pôster")
 def fig_diedro_explicado(d: Dados) -> str:
