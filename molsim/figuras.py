@@ -462,20 +462,10 @@ def fig_estrutura_poster(d: Dados) -> str:
             "público leigo.")
 
 
-@figura("S_diedros_poster", "Os 12 ângulos diedros na estrutura",
-        "Pôster › Material e Métodos", tipo="pôster")
-def fig_diedros_poster(d: Dados) -> str:
-    from matplotlib.patches import FancyBboxPatch
-
-    names, coords = d.xyz500
-    c0 = coords[0]
-    base = eixos_de_vista(c0)
-    fig, ax = plt.subplots(figsize=(INTEIRA, 8.4 * CM))
-    fig.subplots_adjust(left=0.0, right=1.0, top=1.0, bottom=0.08)
-    desenhar_molecula(ax, c0, names, ligacoes(c0, names), base, rotulos=False)
-    xyz = (c0 - c0[BACKBONE].mean(0)) @ base
-    centro = xyz[BACKBONE, :2].mean(0)
+def marcar_giros(ax, xyz, fonte=9.5) -> None:
+    """Anel com seta em volta de cada uma das 12 ligações que giram, com o nome do ângulo."""
     halo = [pe.withStroke(linewidth=3, foreground="white")]
+    centro = xyz[BACKBONE, :2].mean(0)
     for k, (_, a, b, _) in enumerate(DIHEDRAL_ATOMS):
         g = "φ" if k % 2 == 0 else "ψ"
         pa, pb = xyz[a, :2], xyz[b, :2]
@@ -489,8 +479,24 @@ def fig_diedros_poster(d: Dados) -> str:
         if k == 3:  # ψ₂ fica no meio da cadeia: para fora apontaria para a ligação de φ₃
             normal = -normal
         ax.annotate(f"{g}{'₁₂₃₄₅₆'[k // 2]}", meio, xytext=22 * normal,
-                    textcoords="offset points", ha="center", va="center", fontsize=9.5,
+                    textcoords="offset points", ha="center", va="center", fontsize=fonte,
                     fontweight="bold", color=COR_GIRO[g], path_effects=halo, zorder=600)
+
+
+@figura("S_diedros_poster", "Os 12 ângulos diedros na estrutura",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_diedros_poster(d: Dados) -> str:
+    from matplotlib.patches import FancyBboxPatch
+
+    names, coords = d.xyz500
+    c0 = coords[0]
+    base = eixos_de_vista(c0)
+    fig, ax = plt.subplots(figsize=(INTEIRA, 8.4 * CM))
+    fig.subplots_adjust(left=0.0, right=1.0, top=1.0, bottom=0.08)
+    desenhar_molecula(ax, c0, names, ligacoes(c0, names), base, rotulos=False)
+    xyz = (c0 - c0[BACKBONE].mean(0)) @ base
+    halo = [pe.withStroke(linewidth=3, foreground="white")]
+    marcar_giros(ax, xyz)
     for i, txt, off, ha in ((0, "Ace", (-8, 0), "right"), (39, "NH₂", (0, -16), "center")):
         ax.annotate(txt, xyz[i, :2], xytext=off, textcoords="offset points", ha=ha,
                     va="center", fontsize=8.5, color=TINTA, path_effects=halo, zorder=600)
@@ -623,16 +629,11 @@ def fig_diedro_livro(d: Dados) -> str:
             "gira, o livro abre ou fecha e φ muda. ψ é igual, com a lombada em Cα–C.")
 
 
-@figura("S_diedro_simples_poster", "O ângulo φ visto de ponta, como um ângulo comum",
-        "Pôster › Material e Métodos", tipo="pôster")
-def fig_diedro_simples(d: Dados) -> str:
-    from matplotlib.patches import Arc, FancyArrowPatch
+def diedro_de_lado(a1) -> None:
+    """Trecho C–N–Cα–C visto de lado, com a seta de onde olhar (φ = 120°)."""
+    from matplotlib.patches import FancyArrowPatch
 
     halo = [pe.withStroke(linewidth=3, foreground="white")]
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(INTEIRA, 6.2 * CM),
-                                 gridspec_kw={"width_ratios": [1.25, 1]})
-    fig.subplots_adjust(left=0.01, right=0.99, top=0.9, bottom=0.02, wspace=0.15)
-
     # (a) de onde olhar: ao longo da ligação N–Cα
     # de lado, só se vê a componente vertical: com φ = 120°, o C de depois desce
     # cos(120°) = metade do que o C de antes sobe (o resto aponta para fora do papel)
@@ -658,6 +659,12 @@ def fig_diedro_simples(d: Dados) -> str:
     a1.set_aspect("equal")
     a1.axis("off")
 
+
+def diedro_de_ponta(a2) -> None:
+    """O mesmo trecho visto ao longo de N–Cα: φ aparece como um ângulo comum."""
+    from matplotlib.patches import Arc
+
+    halo = [pe.withStroke(linewidth=3, foreground="white")]
     # (b) o que se vê: N na frente cobrindo o Cα, e os dois C como as retas de um ângulo
     O = np.array([0.0, 0.0])
     t_antes, t_depois = 90.0, -30.0
@@ -677,10 +684,21 @@ def fig_diedro_simples(d: Dados) -> str:
     meio = np.radians((t_antes + t_depois) / 2)
     a2.text(0.62 * np.cos(meio), 0.62 * np.sin(meio), "φ", fontsize=15, fontweight="bold",
             color=COR_GIRO["φ"], ha="center", va="center", path_effects=halo, zorder=7)
-    a2.set_xlim(-1.5, 1.9)
+    a2.set_xlim(-1.5, 2.4)
     a2.set_ylim(-1.0, 1.45)
     a2.set_aspect("equal")
     a2.axis("off")
+
+
+@figura("S_diedro_simples_poster", "O ângulo φ visto de ponta, como um ângulo comum",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_diedro_simples(d: Dados) -> str:
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(INTEIRA, 6.2 * CM),
+                                 gridspec_kw={"width_ratios": [1.25, 1]})
+    fig.subplots_adjust(left=0.01, right=0.99, top=0.9, bottom=0.02, wspace=0.15)
+
+    diedro_de_lado(a1)
+    diedro_de_ponta(a2)
 
     for ax, s, titulo in ((a1, "a", "a cadeia, de lado"), (a2, "b", "o que você vê")):
         x0 = ax.get_position().x0
@@ -691,6 +709,61 @@ def fig_diedro_simples(d: Dados) -> str:
             "ligação N–Cα, o Cα fica escondido atrás do N e os dois C aparecem como as duas "
             "retas de um ângulo comum: esse ângulo é φ. ψ é igual, olhando ao longo de Cα–C. "
             "Valor ilustrativo: φ = 120°.")
+
+
+@figura("S_peptideo_angulos_poster", "Peptídeo completo com os 12 giros e o zoom em φ₂",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_peptideo_angulos(d: Dados) -> str:
+    from matplotlib.patches import ConnectionPatch, Ellipse, FancyBboxPatch
+
+    names, coords = d.xyz500
+    c0 = coords[0]
+    base = eixos_de_vista(c0)
+    halo = [pe.withStroke(linewidth=3, foreground="white")]
+    fig = plt.figure(figsize=(INTEIRA, 13.5 * CM))
+    ax = fig.add_axes([0.0, 0.45, 1.0, 0.55])
+    desenhar_molecula(ax, c0, names, ligacoes(c0, names), base, rotulos=False)
+    xyz = (c0 - c0[BACKBONE].mean(0)) @ base
+    marcar_giros(ax, xyz)
+    for i, txt, off, ha in ((0, "Ace", (-8, 0), "right"), (39, "NH₂", (0, -16), "center")):
+        ax.annotate(txt, xyz[i, :2], xytext=off, textcoords="offset points", ha=ha,
+                    va="center", fontsize=8.5, color=TINTA, path_effects=halo, zorder=600)
+    ax.set_xlim(ax.get_xlim()[0] - 0.5, ax.get_xlim()[1] + 0.5)
+    ax.set_ylim(ax.get_ylim()[0] - 0.6, ax.get_ylim()[1] + 0.6)
+    alcas = [Line2D([], [], marker="o", ls="", markersize=6, markerfacecolor=CPK[e],
+                    markeredgecolor=TINTA, markeredgewidth=0.4, label=e) for e in "CNOH"]
+    ax.legend(handles=alcas, loc="upper left", ncol=4, handletextpad=0.1,
+              columnspacing=1.0, fontsize=8.5)
+
+    # destaque em φ₂ e linhas de zoom até os quadros de baixo
+    _, a, b, _ = DIHEDRAL_ATOMS[2]
+    m = (xyz[a, :2] + xyz[b, :2]) / 2
+    lig = xyz[b, :2] - xyz[a, :2]
+    ang = np.degrees(np.arctan2(lig[1], lig[0]))
+    ax.add_patch(Ellipse(m, np.linalg.norm(lig) + 0.9, 1.5, angle=ang, fill=False,
+                         ec=COR_GIRO["φ"], lw=1.4, ls=(0, (4, 2)), zorder=700))
+    # uma linha só, do destaque até o título do zoom, por uma região vazia da figura
+    fig.add_artist(ConnectionPatch((m[0], m[1] - 0.75), (0.5, 0.425), coordsA=ax.transData,
+                                   coordsB=fig.transFigure, color=COR_GIRO["φ"], lw=0.9,
+                                   ls=(0, (4, 2))))
+    fig.text(0.5, 0.42, "de perto: como se mede o ângulo φ₂", ha="center", va="top",
+             fontsize=9, fontweight="bold", color=COR_GIRO["φ"])
+
+    a1 = fig.add_axes([0.0, 0.0, 0.56, 0.33])
+    a2 = fig.add_axes([0.58, 0.0, 0.42, 0.33])
+    # contorno do zoom: os dois quadros de baixo são o detalhe do φ₂ circulado acima
+    fig.add_artist(FancyBboxPatch((0.01, 0.005), 0.98, 0.425, boxstyle="round,pad=0,rounding_size=0.015",
+                                  transform=fig.transFigure, facecolor="none",
+                                  edgecolor=COR_GIRO["φ"], lw=0.9, ls=(0, (4, 2))))
+    diedro_de_lado(a1)
+    diedro_de_ponta(a2)
+    for axp, titulo in ((a1, "a cadeia, de lado"), (a2, "olhando ao longo da ligação")):
+        axp.set_title(titulo, fontsize=8.5, color=TINTA, pad=2)
+    salvar(fig, "S_peptideo_angulos_poster")
+    return ("Em cima, o peptídeo completo (primeiro frame a 500 K) com as 12 ligações que "
+            "giram, duas por alanina (φ em N–Cα, ψ em Cα–C). Embaixo, o zoom em φ₂: olhando "
+            "ao longo da ligação N–Cα, os dois C das pontas aparecem como as retas de um "
+            "ângulo comum, e esse ângulo é φ (ilustrado com 120°).")
 
 
 @figura("S_diedro_explicado_poster", "O que são os ângulos φ e ψ",
