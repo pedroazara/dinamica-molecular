@@ -504,6 +504,102 @@ def fig_diedros_poster(d: Dados) -> str:
             "é o da alanina, de Ala1 a Ala6. Primeiro frame da trajetória de 500 K.")
 
 
+COR_GIRO = {"φ": "#7b3fa0", "ψ": "#d95f02"}
+
+
+def seta_de_giro(ax, pa, pb, cor, raio=0.32, achatamento=0.35) -> None:
+    """Anel com seta em volta da ligação pa–pb, como se a envolvesse: 'gira aqui'."""
+    from matplotlib.patches import Arc, FancyArrowPatch
+
+    pa, pb = np.asarray(pa, float), np.asarray(pb, float)
+    m = (pa + pb) / 2
+    u = (pb - pa) / np.linalg.norm(pb - pa)
+    n = np.array([-u[1], u[0]])
+    ang = np.degrees(np.arctan2(n[1], n[0]))
+    ax.add_patch(Arc(m, 2 * raio, 2 * raio * achatamento, angle=ang, theta1=25, theta2=320,
+                     color=cor, lw=2.2, zorder=50))
+    t = np.radians([300, 320])
+    pts = m + np.outer(np.cos(t) * raio, n) + np.outer(np.sin(t) * raio * achatamento, u)
+    ax.add_patch(FancyArrowPatch(pts[0], pts[1], arrowstyle="-|>", mutation_scale=14,
+                                 color=cor, lw=0, zorder=51))
+
+
+@figura("S_diedro_explicado_poster", "O que são os ângulos φ e ψ",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_diedro_explicado(d: Dados) -> str:
+    from matplotlib.patches import Arc, Circle
+
+    halo = [pe.withStroke(linewidth=3, foreground="white")]
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(INTEIRA, 6.0 * CM),
+                                 gridspec_kw=dict(width_ratios=[1.55, 1]))
+
+    # (a) trecho da cadeia: onde ficam os dois giros de uma alanina
+    xs = np.arange(5) * 1.0
+    ys = np.array([0, 0.55, 0, 0.55, 0])
+    rot = ["C", "N", "Cα", "C", "N"]
+    cores = [CPK["C"], CPK["N"], CPK["C"], CPK["C"], CPK["N"]]
+    a1.plot(xs, ys, color="#5a5955", lw=3, zorder=2, solid_capstyle="round")
+    a1.plot([-0.6, 0], [0.55, 0], color="#5a5955", lw=3, zorder=2, ls=(0, (1, 1.5)))
+    a1.plot([4, 4.6], [0, 0.55], color="#5a5955", lw=3, zorder=2, ls=(0, (1, 1.5)))
+    for x, y, r, c in zip(xs, ys, rot, cores):
+        a1.scatter(x, y, s=260, color=c, edgecolors=TINTA, linewidths=0.6, zorder=10)
+        a1.annotate(r, (x, y), xytext=(0, -17 if y == 0 else 15), textcoords="offset points",
+                    ha="center", va="center", fontsize=9, color=TINTA, path_effects=halo)
+    seta_de_giro(a1, (xs[1], ys[1]), (xs[2], ys[2]), COR_GIRO["φ"])
+    seta_de_giro(a1, (xs[2], ys[2]), (xs[3], ys[3]), COR_GIRO["ψ"])
+    for g, (i, j) in (("φ", (1, 2)), ("ψ", (2, 3))):
+        m = ((xs[i] + xs[j]) / 2, (ys[i] + ys[j]) / 2)
+        a1.annotate(g, m, xytext=(0, 30), textcoords="offset points", ha="center",
+                    fontsize=13, fontweight="bold", color=COR_GIRO[g], path_effects=halo)
+    for i, j in ((0, 1), (3, 4)):
+        m = ((xs[i] + xs[j]) / 2, (ys[i] + ys[j]) / 2)
+        a1.annotate("rígida", m, xytext=(0, -24), textcoords="offset points", ha="center",
+                    fontsize=7.5, color="#77756f", path_effects=halo)
+    a1.set_xlim(-0.8, 4.8)
+    a1.set_ylim(-0.55, 1.15)
+    a1.set_aspect("equal")
+    a1.axis("off")
+
+    # (b) projeção de Newman: olhando ao longo de N–Cα, φ é a abertura entre os braços
+    phi = -65.0
+    frente, tras = 90.0, 90.0 + phi
+    a2.add_patch(Circle((0, 0), 0.42, facecolor="white", edgecolor=TINTA, lw=1.2, zorder=3))
+    for th, cor, r0 in ((tras, CPK["C"], 0.42), (frente, CPK["C"], 0.0)):
+        v = np.array([np.cos(np.radians(th)), np.sin(np.radians(th))])
+        a2.plot(*np.c_[r0 * v, 1.0 * v], color="#5a5955", lw=3, zorder=4 if r0 == 0 else 2,
+                solid_capstyle="round")
+        a2.scatter(*(1.0 * v), s=200, color=cor, edgecolors=TINTA, linewidths=0.6, zorder=6)
+    a2.scatter(0, 0, s=200, color=CPK["N"], edgecolors=TINTA, linewidths=0.6, zorder=7)
+    a2.add_patch(Arc((0, 0), 1.45, 1.45, theta1=tras, theta2=frente, color=COR_GIRO["φ"],
+                     lw=2.4, zorder=5))
+    meio = np.radians((frente + tras) / 2)
+    a2.text(0.95 * np.cos(meio), 0.95 * np.sin(meio), "φ", fontsize=13, fontweight="bold",
+            color=COR_GIRO["φ"], ha="center", va="center", path_effects=halo, zorder=8)
+    a2.annotate("C de trás", (np.cos(np.radians(tras)), np.sin(np.radians(tras))),
+                xytext=(8, -4), textcoords="offset points", ha="left", va="top",
+                fontsize=7.5, color=TINTA, path_effects=halo)
+    a2.annotate("C da frente", (0, 1.0), xytext=(9, 0), textcoords="offset points",
+                ha="left", va="center", fontsize=7.5, color=TINTA, path_effects=halo)
+    a2.text(0, -0.75, "N na frente, Cα atrás\n(olhando ao longo da ligação N–Cα)",
+            ha="center", va="top", fontsize=7.5, color=TINTA)
+    a2.set_xlim(-1.3, 1.6)
+    a2.set_ylim(-1.35, 1.3)
+    a2.set_aspect("equal")
+    a2.axis("off")
+    # aspect="equal" encolhe os eixos de jeitos diferentes: letras na mesma altura da figura
+    for ax, s in ((a1, "a"), (a2, "b")):
+        x0 = ax.get_position().x0
+        fig.text(x0, 0.95, f"({s})", ha="left", va="top", fontsize=8.5, fontweight="bold",
+                 color=TINTA)
+
+    salvar(fig, "S_diedro_explicado_poster")
+    return ("(a) Em cada alanina, a cadeia gira em torno das duas ligações vizinhas ao Cα: φ "
+            "em torno de N–Cα e ψ em torno de Cα–C; as ligações peptídicas são rígidas. "
+            "(b) Olhando ao longo da ligação N–Cα, φ é o ângulo entre o C da alanina anterior "
+            "(na frente) e o C da própria alanina (atrás); ψ é definido do mesmo jeito ao "
+            "longo de Cα–C. Valor ilustrativo: φ = −65°.")
+
+
 # --------------------------------------------------------------------------
 # A — descritores globais (Fase A)
 # --------------------------------------------------------------------------
