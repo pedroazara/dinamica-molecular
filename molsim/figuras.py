@@ -361,6 +361,13 @@ def eixos_de_vista(coords: np.ndarray) -> np.ndarray:
     return base
 
 
+# Frame da figura dos ângulos no pôster. No primeiro frame, a ponta C-terminal (Ala6 e NH₂)
+# fica de frente para quem olha e os átomos se sobrepõem na projeção. O 1132 foi escolhido
+# entre os frames de 500 K pela maior folga 2D entre átomos não vizinhos e entre átomo e
+# ligação alheia, na vista de eixos_de_vista.
+QUADRO_POSTER = 1132
+
+
 def desenhar_molecula(ax, coords, names, bonds, base, rotulos=True, destaque=None,
                       fonte=6.5) -> None:
     xyz = (coords - coords[BACKBONE].mean(0)) @ base
@@ -466,14 +473,20 @@ def fig_estrutura_poster(d: Dados) -> str:
         "Pôster › Material e Métodos", tipo="pôster")
 def fig_diedros_poster(d: Dados) -> str:
     names, coords = d.xyz500
-    c0 = coords[0]
+    c0 = coords[QUADRO_POSTER]
     base = eixos_de_vista(c0)
     fig, ax = plt.subplots(figsize=(INTEIRA, 6.6 * CM))
     desenhar_molecula(ax, c0, names, ligacoes(c0, names), base, rotulos=False)
     xyz = (c0 - c0[BACKBONE].mean(0)) @ base
-    centro = xyz[BACKBONE, :2].mean(0)
     halo = [pe.withStroke(linewidth=3, foreground="white")]
     cor = {"φ": "#7b3fa0", "ψ": "#d95f02"}
+    ocupados = [p for p in xyz[:, :2]]
+    for i in range(len(names)):  # pontos ao longo das ligações também ocupam lugar
+        for j in range(i + 1, len(names)):
+            if np.linalg.norm(c0[i] - c0[j]) < (1.25 if "H" in names[i][0] + names[j][0]
+                                                else 1.75):
+                ocupados += [xyz[i, :2] + t * (xyz[j, :2] - xyz[i, :2])
+                             for t in (0.25, 0.5, 0.75)]
     for k, (_, a, b, _) in enumerate(DIHEDRAL_ATOMS):
         letra_ang = "φ" if k % 2 == 0 else "ψ"
         pa, pb = xyz[a, :2], xyz[b, :2]
@@ -481,15 +494,18 @@ def fig_diedros_poster(d: Dados) -> str:
         ax.plot(*np.c_[pa, pb], color=cor[letra_ang], lw=8, alpha=0.45,
                 solid_capstyle="round", zorder=1)
         meio = (pa + pb) / 2
-        normal = np.array([pb[1] - pa[1], pa[0] - pb[0]])
-        normal /= np.linalg.norm(normal)
-        if normal @ (meio - centro) < 0:
-            normal = -normal
-        if k == 3:  # ψ₂ fica no meio da cadeia: para fora apontaria para a ligação de φ₃
-            normal = -normal
-        ax.annotate(f"{letra_ang}{'₁₂₃₄₅₆'[k // 2]}", meio, xytext=17 * normal,
-                    textcoords="offset points", ha="center", va="center", fontsize=9.5,
-                    fontweight="bold", color=cor[letra_ang], path_effects=halo, zorder=600)
+        u = (pb - pa) / np.linalg.norm(pb - pa)
+        normal = np.array([u[1], -u[0]])
+        # rótulo no lugar mais livre ao redor da ligação (dos dois lados, a 0,9–1,4 Å),
+        # longe de átomos, ligações e rótulos já postos
+        candidatos = [meio + lado * dist * normal + desl * u for lado in (1, -1)
+                      for dist in (0.9, 1.15, 1.4) for desl in (-0.35, 0.0, 0.35)]
+        pos = max(candidatos, key=lambda q: min(np.linalg.norm(np.array(ocupados) - q, axis=1))
+                  - 0.6 * np.linalg.norm(q - meio))
+        ocupados += [pos]
+        ax.text(*pos, f"{letra_ang}{'₁₂₃₄₅₆'[k // 2]}", ha="center", va="center",
+                fontsize=9.5, fontweight="bold", color=cor[letra_ang], path_effects=halo,
+                zorder=600)
     for i, txt, off, ha in ((0, "Ace", (-8, 0), "right"), (39, "NH₂", (0, -16), "center")):
         ax.annotate(txt, xyz[i, :2], xytext=off, textcoords="offset points", ha=ha,
                     va="center", fontsize=8.5, color=TINTA, path_effects=halo, zorder=600)
@@ -501,7 +517,8 @@ def fig_diedros_poster(d: Dados) -> str:
     salvar(fig, "S_diedros_poster")
     return ("Os 12 ângulos diedros do esqueleto, dois por alanina: φ gira em torno da "
             "ligação N–Cα e ψ em torno da ligação Cα–C (realçadas na cor do ângulo). O índice "
-            "é o da alanina, de Ala1 a Ala6. Primeiro frame da trajetória de 500 K.")
+            "é o da alanina, de Ala1 a Ala6. Frame "
+            f"{QUADRO_POSTER} da trajetória de 500 K.")
 
 
 # --------------------------------------------------------------------------
