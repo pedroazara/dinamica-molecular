@@ -45,7 +45,7 @@ from matplotlib.ticker import FuncFormatter, NullFormatter, ScalarFormatter  # n
 from molsim import kinetics as kin  # noqa: E402
 from molsim import parametros as P  # noqa: E402
 from molsim.data import (  # noqa: E402
-    DIHEDRAL_NAMES, load_features, ramachandran_region, read_xyz, state_name,
+    DIHEDRAL_ATOMS, DIHEDRAL_NAMES, load_features, ramachandran_region, read_xyz, state_name,
 )
 from molsim.kmeans_variants import (  # noqa: E402
     VARIANTS, best_of, canonical_states, chord_sq, convergence_program,
@@ -460,6 +460,48 @@ def fig_estrutura_poster(d: Dados) -> str:
     return ("Ace-(Ala)₆-NH₂, peptídeo de seis alaninas, no primeiro frame da trajetória de "
             "500 K. Mesma figura que S_estrutura, sem o destaque da ligação *cis*, para "
             "público leigo.")
+
+
+@figura("S_diedros_poster", "Os 12 ângulos diedros na estrutura",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_diedros_poster(d: Dados) -> str:
+    names, coords = d.xyz500
+    c0 = coords[0]
+    base = eixos_de_vista(c0)
+    fig, ax = plt.subplots(figsize=(INTEIRA, 6.6 * CM))
+    desenhar_molecula(ax, c0, names, ligacoes(c0, names), base, rotulos=False)
+    xyz = (c0 - c0[BACKBONE].mean(0)) @ base
+    centro = xyz[BACKBONE, :2].mean(0)
+    halo = [pe.withStroke(linewidth=3, foreground="white")]
+    cor = {"φ": "#7b3fa0", "ψ": "#d95f02"}
+    for k, (_, a, b, _) in enumerate(DIHEDRAL_ATOMS):
+        letra_ang = "φ" if k % 2 == 0 else "ψ"
+        pa, pb = xyz[a, :2], xyz[b, :2]
+        # a ligação central do diedro é o eixo de giro: realce na cor do ângulo
+        ax.plot(*np.c_[pa, pb], color=cor[letra_ang], lw=8, alpha=0.45,
+                solid_capstyle="round", zorder=1)
+        meio = (pa + pb) / 2
+        normal = np.array([pb[1] - pa[1], pa[0] - pb[0]])
+        normal /= np.linalg.norm(normal)
+        if normal @ (meio - centro) < 0:
+            normal = -normal
+        if k == 3:  # ψ₂ fica no meio da cadeia: para fora apontaria para a ligação de φ₃
+            normal = -normal
+        ax.annotate(f"{letra_ang}{'₁₂₃₄₅₆'[k // 2]}", meio, xytext=17 * normal,
+                    textcoords="offset points", ha="center", va="center", fontsize=9.5,
+                    fontweight="bold", color=cor[letra_ang], path_effects=halo, zorder=600)
+    for i, txt, off, ha in ((0, "Ace", (-8, 0), "right"), (39, "NH₂", (0, -16), "center")):
+        ax.annotate(txt, xyz[i, :2], xytext=off, textcoords="offset points", ha=ha,
+                    va="center", fontsize=8.5, color=TINTA, path_effects=halo, zorder=600)
+    alcas = [Line2D([], [], marker="o", ls="", markersize=6, markerfacecolor=CPK[e],
+                    markeredgecolor=TINTA, markeredgewidth=0.4, label=e) for e in "CNOH"]
+    alcas += [Line2D([], [], color=cor[g], lw=6, alpha=0.6, label=g) for g in "φψ"]
+    ax.legend(handles=alcas, loc="upper center", bbox_to_anchor=(0.5, 0.0), ncol=6,
+              handlelength=1.4, handletextpad=0.4, columnspacing=1.4, fontsize=8.5)
+    salvar(fig, "S_diedros_poster")
+    return ("Os 12 ângulos diedros do esqueleto, dois por alanina: φ gira em torno da "
+            "ligação N–Cα e ψ em torno da ligação Cα–C (realçadas na cor do ângulo). O índice "
+            "é o da alanina, de Ala1 a Ala6. Primeiro frame da trajetória de 500 K.")
 
 
 # --------------------------------------------------------------------------
