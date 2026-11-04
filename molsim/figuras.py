@@ -521,6 +521,62 @@ def fig_diedros_poster(d: Dados) -> str:
             f"{QUADRO_POSTER} da trajetória de 500 K.")
 
 
+ETAPAS_METODO = [
+    ("Simulação", "o computador calcula\no movimento dos átomos"),
+    ("Fotos", "2000 fotos da\nmolécula em 20 ns"),
+    ("Ângulos", "12 ângulos de giro\npor foto (φ e ψ)"),
+    ("K-means", "agrupa fotos parecidas,\ncom a média certa\npara ângulos"),
+    ("Formas", "grupos de formas\nque se repetem"),
+    ("Tempo", "quanto tempo a molécula\nfica em cada forma"),
+]
+
+
+def desenhar_fluxograma(ax) -> None:
+    from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
+
+    n = len(ETAPAS_METODO)
+    w, h, passo = 4.6, 1.8, 2.4
+    for i, (titulo, texto) in enumerate(ETAPAS_METODO):
+        cx, cy = 0.0, -i * passo
+        destaque = titulo == "K-means"  # a etapa em que está a contribuição do trabalho
+        ax.add_patch(FancyBboxPatch((cx - w / 2, cy - h / 2), w, h,
+                                    boxstyle="round,pad=0,rounding_size=0.18",
+                                    facecolor="#eef2f8", edgecolor="#4a3aa7" if destaque
+                                    else "#9fb3d1", lw=2.0 if destaque else 1.0, zorder=2))
+        ax.text(cx - w / 2 + 0.45, cy, str(i + 1), ha="center", va="center", fontsize=11,
+                fontweight="bold", color="white", zorder=4,
+                bbox={"boxstyle": "circle,pad=0.25", "fc": "#4a3aa7", "ec": "none"})
+        ax.text(cx - w / 2 + 0.95, cy + 0.5, titulo, ha="left", va="center",
+                fontsize=10, fontweight="bold", color=TINTA, zorder=4)
+        ax.text(cx - w / 2 + 0.95, cy + 0.12, texto, ha="left", va="top", fontsize=7.5,
+                color=TINTA, zorder=4, linespacing=1.15)
+        if destaque:
+            ax.text(cx + w / 2 - 0.12, cy + h / 2 - 0.12, "nossa versão", ha="right",
+                    va="top", fontsize=6.5, color="#4a3aa7", fontweight="bold", zorder=4)
+        if i < n - 1:
+            ini, fim = (cx, cy - h / 2 - 0.04), (cx, cy - passo + h / 2 + 0.04)
+            ax.add_patch(FancyArrowPatch(ini, fim, arrowstyle="-|>", mutation_scale=14,
+                                         color="#5a5955", lw=1.6, zorder=1))
+    ax.set_xlim(-w / 2 - 0.1, w / 2 + 0.1)
+    ax.set_ylim(-(n - 1) * passo - h / 2 - 0.1, h / 2 + 0.1)
+    ax.set_aspect("equal")
+    ax.axis("off")
+
+
+LEGENDA_FLUXOGRAMA = ("Etapas do método, da simulação ao critério de tempo. A etapa 4 é a "
+                      "contribuição do trabalho: o K-means com a média correta para ângulos.")
+
+
+@figura("S_fluxograma_poster", "Fluxograma do método",
+        "Pôster › Material e Métodos", tipo="pôster")
+def fig_fluxograma(d: Dados) -> str:
+    fig, ax = plt.subplots(figsize=(6.2 * CM, 6.2 * CM * 14.2 / 4.8))
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    desenhar_fluxograma(ax)
+    salvar(fig, "S_fluxograma_poster")
+    return LEGENDA_FLUXOGRAMA
+
+
 # --------------------------------------------------------------------------
 # A — descritores globais (Fase A)
 # --------------------------------------------------------------------------
