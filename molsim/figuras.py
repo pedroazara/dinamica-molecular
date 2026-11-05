@@ -720,7 +720,6 @@ def fig_rama_poster(d: Dados) -> str:
     ax.set_xlabel("φ (°)", fontsize=10)
     ax.set_ylabel("ψ (°)", fontsize=10)
     ax.tick_params(labelsize=8.5)
-    caixa = {"boxstyle": "round,pad=0.25", "fc": "white", "ec": "none", "alpha": 0.85}
     # β, P e L: rótulo logo acima da faixa de cima, onde estão quase todos os pontos
     for r, x in (("β", -140), ("P", -50), ("L", 90)):
         ax.text(x, 186, f"{r}  {pct(frac[r])}", ha="center", va="bottom", fontsize=10,
@@ -729,12 +728,13 @@ def fig_rama_poster(d: Dados) -> str:
     for x, forma in ((-90, "esticada"), (90, "rara")):
         ax.text(x, 212, forma, ha="center", va="bottom", fontsize=10, fontweight="bold",
                 color=TINTA, clip_on=False)
-    ax.text(-45, 5, f"α  {pct(frac['α'])}\nenrolada", ha="center", va="center", fontsize=10,
-            fontweight="bold", color=TINTA, linespacing=1.2, zorder=5, bbox=caixa)
+    ax.text(-6, 22, f"α  {pct(frac['α'])}\nenrolada", ha="right", va="center", fontsize=10,
+            fontweight="bold", color=TINTA, linespacing=1.2, zorder=5,
+            path_effects=[pe.withStroke(linewidth=3, foreground="white")])
     # a faixa de baixo continua a de cima (ψ = −180° e ψ = 180° são o mesmo ângulo)
-    for r, x in (("β", -140), ("P", -50)):
-        ax.text(x, -150, r, ha="center", va="center", fontsize=9, color="#77756f", zorder=5,
-                bbox=caixa)
+    # nos cantos vazios dessas faixas, para não cobrir os pontos
+    for r, x in (("β", -112), ("P", -20)):
+        ax.text(x, -150, r, ha="center", va="center", fontsize=8.5, color="#77756f", zorder=5)
     salvar(fig, "D_ramachandran_poster")
     return ("Ângulos (φ, ψ) das seis alaninas juntas, nos 2000 frames a 500 K; cor mais escura = "
             "mais frames (escala logarítmica). As linhas cinza separam as regiões usadas nos "
