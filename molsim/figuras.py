@@ -695,6 +695,47 @@ def fig_rama_temp(d: Dados) -> str:
             "300 K a região α_L não é visitada.")
 
 
+@figura("D_ramachandran_poster", "Mapa de Ramachandran, as 6 alaninas juntas a 500 K",
+        "Pôster › Resultados", tipo="pôster")
+def fig_rama_poster(d: Dados) -> str:
+    phi, psi = d.X5[:, 0::2].ravel(), d.X5[:, 1::2].ravel()
+    reg = ramachandran_region(phi, psi)
+    frac = {r: np.mean(reg == r) for r in "αβPL"}
+    fig, ax = plt.subplots(figsize=(8.5 * CM, 8.5 * CM))
+    fig.subplots_adjust(left=0.17, right=0.97, top=0.97, bottom=0.15)
+    bins = np.linspace(-180, 180, 61)
+    azul = LinearSegmentedColormap.from_list("azul", plt.get_cmap("Blues")(np.linspace(0.4, 1, 256)))
+    ax.hist2d(phi, psi, bins=[bins, bins], cmap=azul, cmin=1, norm=LogNorm(vmin=1, vmax=2000),
+              rasterized=True)
+    kw = {"color": "#77756f", "lw": 1.0, "zorder": 3}
+    ax.axvline(0, **kw)
+    ax.plot([-180, 0], [50, 50], **kw)
+    ax.plot([-180, 0], [-120, -120], **kw)
+    ax.plot([-100, -100], [50, 180], **kw)
+    ax.plot([-100, -100], [-180, -120], **kw)
+    ax.set(xlim=(-180, 180), ylim=(-180, 180), xticks=[-180, -90, 0, 90, 180],
+           yticks=[-180, -90, 0, 90, 180])
+    ax.set_aspect("equal")
+    ax.grid(False)
+    ax.set_xlabel("φ (°)", fontsize=10)
+    ax.set_ylabel("ψ (°)", fontsize=10)
+    ax.tick_params(labelsize=8.5)
+    # cada rótulo num canto vazio da própria região; embaixo também é β e P, porque
+    # ψ = −180° e ψ = 180° são o mesmo ângulo
+    rotulos = {"α": ((-45, 5), "enrolada"), "β": ((-140, -150), "esticada"),
+               "P": ((-50, -150), "esticada"), "L": ((125, 120), "rara")}
+    for r, ((x, y), forma) in rotulos.items():
+        ax.text(x, y, f"{r}  {pct(frac[r])}\n{forma}", ha="center", va="center", fontsize=10,
+                fontweight="bold", color=TINTA, linespacing=1.2, zorder=5,
+                bbox={"boxstyle": "round,pad=0.25", "fc": "white", "ec": "none", "alpha": 0.85})
+    salvar(fig, "D_ramachandran_poster")
+    return ("Ângulos (φ, ψ) das seis alaninas juntas, nos 2000 frames a 500 K; cor mais escura = "
+            "mais frames (escala logarítmica). As linhas cinza separam as regiões usadas nos "
+            f"nomes dos estados, com a fração do tempo em cada uma: α (α_R, {pct(frac['α'])}), "
+            f"β ({pct(frac['β'])}), P (PPII, {pct(frac['P'])}) e L (α_L, φ > 0, "
+            f"{pct(frac['L'])}).")
+
+
 @figura("D_ocupacao_regioes", "Ocupação das regiões de Ramachandran por resíduo",
         "Resultados › Ângulos diedros", conferir="notebook 05 §0 (tabela de ocupação)")
 def fig_ocupacao(d: Dados) -> str:
