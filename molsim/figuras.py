@@ -701,8 +701,8 @@ def fig_rama_poster(d: Dados) -> str:
     phi, psi = d.X5[:, 0::2].ravel(), d.X5[:, 1::2].ravel()
     reg = ramachandran_region(phi, psi)
     frac = {r: np.mean(reg == r) for r in "αβPL"}
-    fig, ax = plt.subplots(figsize=(8.5 * CM, 8.5 * CM))
-    fig.subplots_adjust(left=0.17, right=0.97, top=0.97, bottom=0.15)
+    fig, ax = plt.subplots(figsize=(8.5 * CM, 9.5 * CM))
+    fig.subplots_adjust(left=0.17, right=0.97, top=0.85, bottom=0.13)
     bins = np.linspace(-180, 180, 61)
     azul = LinearSegmentedColormap.from_list("azul", plt.get_cmap("Blues")(np.linspace(0.4, 1, 256)))
     ax.hist2d(phi, psi, bins=[bins, bins], cmap=azul, cmin=1, norm=LogNorm(vmin=1, vmax=2000),
@@ -720,14 +720,21 @@ def fig_rama_poster(d: Dados) -> str:
     ax.set_xlabel("φ (°)", fontsize=10)
     ax.set_ylabel("ψ (°)", fontsize=10)
     ax.tick_params(labelsize=8.5)
-    # cada rótulo num canto vazio da própria região; embaixo também é β e P, porque
-    # ψ = −180° e ψ = 180° são o mesmo ângulo
-    rotulos = {"α": ((-45, 5), "enrolada"), "β": ((-140, -150), "esticada"),
-               "P": ((-50, -150), "esticada"), "L": ((125, 120), "rara")}
-    for r, ((x, y), forma) in rotulos.items():
-        ax.text(x, y, f"{r}  {pct(frac[r])}\n{forma}", ha="center", va="center", fontsize=10,
-                fontweight="bold", color=TINTA, linespacing=1.2, zorder=5,
-                bbox={"boxstyle": "round,pad=0.25", "fc": "white", "ec": "none", "alpha": 0.85})
+    caixa = {"boxstyle": "round,pad=0.25", "fc": "white", "ec": "none", "alpha": 0.85}
+    # β, P e L: rótulo logo acima da faixa de cima, onde estão quase todos os pontos
+    for r, x in (("β", -140), ("P", -50), ("L", 90)):
+        ax.text(x, 186, f"{r}  {pct(frac[r])}", ha="center", va="bottom", fontsize=10,
+                fontweight="bold", color=TINTA, clip_on=False)
+    # β e P são as duas formas esticadas: uma palavra só, sobre as duas faixas
+    for x, forma in ((-90, "esticada"), (90, "rara")):
+        ax.text(x, 212, forma, ha="center", va="bottom", fontsize=10, fontweight="bold",
+                color=TINTA, clip_on=False)
+    ax.text(-45, 5, f"α  {pct(frac['α'])}\nenrolada", ha="center", va="center", fontsize=10,
+            fontweight="bold", color=TINTA, linespacing=1.2, zorder=5, bbox=caixa)
+    # a faixa de baixo continua a de cima (ψ = −180° e ψ = 180° são o mesmo ângulo)
+    for r, x in (("β", -140), ("P", -50)):
+        ax.text(x, -150, r, ha="center", va="center", fontsize=9, color="#77756f", zorder=5,
+                bbox=caixa)
     salvar(fig, "D_ramachandran_poster")
     return ("Ângulos (φ, ψ) das seis alaninas juntas, nos 2000 frames a 500 K; cor mais escura = "
             "mais frames (escala logarítmica). As linhas cinza separam as regiões usadas nos "
